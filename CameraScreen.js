@@ -26,6 +26,7 @@ export default function CameraScreen({ navigation }) {
   const [facing, setFacing] = useState('back');
   const [permission, requestPermission] = useCameraPermissions();
   const [isCapturing, setIsCapturing] = useState(false);
+  const [photoUri, setPhotoUri] = useState(null);
   const cameraRef = useRef(null);
 
   if (!permission) {
@@ -44,13 +45,25 @@ export default function CameraScreen({ navigation }) {
   }
 
   const takePhoto = async () => {
-    if (isCapturing) return;
+    if (isCapturing || !cameraRef.current) return;
     
     try {
       setIsCapturing(true);
-      // Note: CameraView doesn't have takePictureAsync method
-      // You'll need to implement photo capture differently
-      Alert.alert('Photo Capture', 'Photo capture functionality needs to be implemented with CameraView');
+      const photo = await cameraRef.current.takePictureAsync({
+        quality: 0.8,
+        base64: false,
+        skipProcessing: false,
+      });
+      
+      setPhotoUri(photo.uri);
+      console.log('Photo captured:', photo.uri);
+      
+      // Navigate to SolutionScreen with the required parameters
+      navigation.navigate('Solution', {
+        equation: "2 + 2",
+        solution: "4",
+        photoUri: photo.uri
+      });
     } catch (error) {
       console.error('Error taking photo:', error);
       Alert.alert('Error', 'Failed to take photo. Please try again.');
@@ -61,7 +74,7 @@ export default function CameraScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <CameraView style={styles.camera} facing={facing} />
+      <CameraView style={styles.camera} facing={facing} ref={cameraRef} />
       <BoundingBoxOverlay onTakePhoto={takePhoto} />
     </View>
   );
@@ -86,7 +99,7 @@ const styles = StyleSheet.create({
   },
   darkOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: 'rgba(0,0,0,0.5)',
   },
   boundingBox: {
     width: '80%',
@@ -95,7 +108,7 @@ const styles = StyleSheet.create({
     borderColor: '#228B22',
     backgroundColor: 'transparent',
     borderRadius: 12,
-    marginTop: '25%', // Position in top half of screen
+    marginTop: '50%', // Position in top half of screen
     // Clear the dark overlay inside the bounding box
     backgroundColor: 'transparent',
   },

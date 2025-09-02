@@ -2,9 +2,12 @@ import React from 'react';
 import { View, Text, StyleSheet, Image } from 'react-native';
 
 export default function SolutionScreen({ route }) {
-  const { imageUri, imageBase64 } = route.params || {};
+  const { equation, solution, photoUri } = route.params || {};
 
-  if (!imageUri) {
+  // Log the received parameters for debugging
+  console.log('SolutionScreen received params:', { equation, solution, photoUri });
+
+  if (!photoUri) {
     return (
       <View style={styles.container}>
         <Text style={styles.noImageText}>No image captured</Text>
@@ -14,20 +17,25 @@ export default function SolutionScreen({ route }) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Captured Image</Text>
+      <Text style={styles.title}>Math Solution</Text>
+      
+      <Text style={styles.equationText}>
+        Equation: {equation || 'No equation provided'}
+      </Text>
+      
+      <Text style={styles.solutionText}>
+        Solution: {solution || 'No solution provided'}
+      </Text>
+      
       <Image 
-        source={{ uri: imageUri }} 
+        source={{ uri: photoUri }} 
         style={styles.image}
         resizeMode="contain"
       />
+      
       <Text style={styles.infoText}>
-        Image captured successfully!
+        Photo captured successfully!
       </Text>
-      {imageBase64 && (
-        <Text style={styles.infoText}>
-          Base64 data available ({imageBase64.length} characters)
-        </Text>
-      )}
     </View>
   );
 }
@@ -36,7 +44,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
-    padding: 20,
+    padding: 105,
   },
   title: {
     fontSize: 24,
@@ -61,5 +69,19 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: '#666',
     marginBottom: 10,
+  },
+  equationText: {
+    fontSize: 20,
+    textAlign: 'center',
+    color: '#333',
+    marginBottom: 10,
+    fontWeight: '600',
+  },
+  solutionText: {
+    fontSize: 18,
+    textAlign: 'center',
+    color: '#228B22',
+    marginBottom: 20,
+    fontWeight: 'bold',
   },
 });
