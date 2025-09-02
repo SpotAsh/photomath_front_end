@@ -1,10 +1,32 @@
 import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
-import { useState } from 'react';
-import { Button, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useState, useRef } from 'react';
+import { Button, StyleSheet, Text, TouchableOpacity, View, Alert } from 'react-native';
+
+// BoundingBoxOverlay component
+const BoundingBoxOverlay = ({ onTakePhoto }) => {
+  return (
+    <View style={styles.overlayContainer}>
+      {/* Dark overlay covering entire screen */}
+      <View style={styles.darkOverlay} />
+      
+      {/* Bounding box area - clear view */}
+      <View style={styles.boundingBox} />
+      
+      {/* Take Photo Button */}
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity style={styles.button} onPress={onTakePhoto}>
+          <Text style={styles.buttonText}>Take Photo</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+};
 
 export default function CameraScreen({ navigation }) {
   const [facing, setFacing] = useState('back');
   const [permission, requestPermission] = useCameraPermissions();
+  const [isCapturing, setIsCapturing] = useState(false);
+  const cameraRef = useRef(null);
 
   if (!permission) {
     // Camera permissions are still loading.
@@ -21,18 +43,26 @@ export default function CameraScreen({ navigation }) {
     );
   }
 
-  function toggleCameraFacing() {
-    setFacing(current => (current === 'back' ? 'front' : 'back'));
-  }
+  const takePhoto = async () => {
+    if (isCapturing) return;
+    
+    try {
+      setIsCapturing(true);
+      // Note: CameraView doesn't have takePictureAsync method
+      // You'll need to implement photo capture differently
+      Alert.alert('Photo Capture', 'Photo capture functionality needs to be implemented with CameraView');
+    } catch (error) {
+      console.error('Error taking photo:', error);
+      Alert.alert('Error', 'Failed to take photo. Please try again.');
+    } finally {
+      setIsCapturing(false);
+    }
+  };
 
   return (
     <View style={styles.container}>
       <CameraView style={styles.camera} facing={facing} />
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity style={styles.button} onPress={toggleCameraFacing}>
-          <Text style={styles.text}>Flip Camera</Text>
-        </TouchableOpacity>
-      </View>
+      <BoundingBoxOverlay onTakePhoto={takePhoto} />
     </View>
   );
 }
@@ -49,21 +79,52 @@ const styles = StyleSheet.create({
   camera: {
     flex: 1,
   },
-  buttonContainer: {
-    position: 'absolute',
-    bottom: 64,
-    flexDirection: 'row',
-    backgroundColor: 'transparent',
-    width: '100%',
-    paddingHorizontal: 64,
-  },
-  button: {
-    flex: 1,
+  overlayContainer: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'flex-start',
     alignItems: 'center',
   },
-  text: {
-    fontSize: 24,
-    fontWeight: 'bold',
+  darkOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+  },
+  boundingBox: {
+    width: '80%',
+    height: 110,
+    borderWidth: 3,
+    borderColor: '#228B22',
+    backgroundColor: 'transparent',
+    borderRadius: 12,
+    marginTop: '25%', // Position in top half of screen
+    // Clear the dark overlay inside the bounding box
+    backgroundColor: 'transparent',
+  },
+  buttonContainer: {
+    position: 'absolute',
+    bottom: 100,
+    width: '80%',
+    alignItems: 'center',
+  },
+  button: {
+    backgroundColor: '#228B22',
+    paddingHorizontal: 30,
+    paddingVertical: 15,
+    borderRadius: 25,
+    borderWidth: 2,
+    borderColor: '#228B22',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  buttonText: {
     color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
+    textAlign: 'center',
   },
 });
