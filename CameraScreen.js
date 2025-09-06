@@ -1,6 +1,7 @@
 import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
 import { useState, useRef } from 'react';
 import { Button, StyleSheet, Text, TouchableOpacity, View, Alert } from 'react-native';
+import * as ImageManipulator from 'expo-image-manipulator';
 
 // BoundingBoxOverlay component
 const BoundingBoxOverlay = ({ onTakePhoto }) => {
@@ -27,6 +28,7 @@ export default function CameraScreen({ navigation }) {
   const [permission, requestPermission] = useCameraPermissions();
   const [isCapturing, setIsCapturing] = useState(false);
   const [photoUri, setPhotoUri] = useState(null);
+  const [cameraDimensions, setCameraDimensions] = useState({ width: 0, height: 0 });
   const cameraRef = useRef(null);
 
   if (!permission) {
@@ -44,8 +46,14 @@ export default function CameraScreen({ navigation }) {
     );
   }
 
+  const handleCameraLayout = (event) => {
+    const { width, height } = event.nativeEvent.layout;
+    setCameraDimensions({ width, height });
+    console.log('Camera dimensions:', width, height);
+  };
+
   const takePhoto = async () => {
-    if (isCapturing || !cameraRef.current) return;
+    if (isCapturing || !cameraRef.current || cameraDimensions.width === 0) return;
     
     try {
       setIsCapturing(true);
@@ -55,14 +63,51 @@ export default function CameraScreen({ navigation }) {
         skipProcessing: false,
       });
       
-      setPhotoUri(photo.uri);
       console.log('Photo captured:', photo.uri);
+      console.log('Photo dimensions:', photo.width, photo.height);
+      console.log('Camera preview dimensions:', cameraDimensions.width, cameraDimensions.height);
       
-      // Navigate to SolutionScreen with the required parameters
+      // Calculate bounding box dimensions and position relative to camera preview
+      const boundingBoxWidth = cameraDimensions.width * 0.8; // 80% of camera preview width
+      const boundingBoxHeight = 110; // Fixed height from styles
+      const boundingBoxTop = cameraDimensions.height * 0.5; // 50% from top (marginTop: '50%')
+      const boundingBoxLeft = (cameraDimensions.width - boundingBoxWidth) / 2; // Centered
+      
+      // Calculate crop rectangle by scaling from camera preview to photo dimensions
+      const scaleX = photo.width / cameraDimensions.width;
+      const scaleY = photo.height / cameraDimensions.height;
+      
+      const cropX = boundingBoxLeft * scaleX;
+      const cropY = boundingBoxTop * scaleY;
+      const cropWidth = boundingBoxWidth * scaleX;
+      const cropHeight = boundingBoxHeight * scaleY;
+      
+      console.log('Crop rectangle:', { cropX, cropY, cropWidth, cropHeight });
+      
+      // Crop the image using ImageManipulator
+      const croppedPhoto = await ImageManipulator.manipulateAsync(
+        photo.uri,
+        [
+          {
+            crop: {
+              originX: cropX,
+              originY: cropY,
+              width: cropWidth,
+              height: cropHeight,
+            },
+          },
+        ],
+        { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG }
+      );
+      
+      setPhotoUri(croppedPhoto.uri);
+      console.log('Photo cropped:', croppedPhoto.uri);
+      
+      // Navigate to SolutionScreen with the cropped photo
       navigation.navigate('Solution', {
         equation: "2 + 2",
         solution: "4",
-        photoUri: photo.uri
+        photoUri: croppedPhoto.uri
       });
     } catch (error) {
       console.error('Error taking photo:', error);
@@ -74,7 +119,12 @@ export default function CameraScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <CameraView style={styles.camera} facing={facing} ref={cameraRef} />
+      <CameraView 
+        style={styles.camera} 
+        facing={facing} 
+        ref={cameraRef}
+        onLayout={handleCameraLayout}
+      />
       <BoundingBoxOverlay onTakePhoto={takePhoto} />
     </View>
   );
