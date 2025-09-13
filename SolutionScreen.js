@@ -1,10 +1,9 @@
 import React from 'react';
-import { View, Text, StyleSheet, Image } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 
-export default function SolutionScreen({ route }) {
+export default function SolutionScreen({ route, navigation }) {
   const { equation, solution, photoUri } = route.params || {};
 
-  // Log the received parameters for debugging
   console.log('SolutionScreen received params:', { equation, solution, photoUri });
 
   if (!photoUri) {
@@ -36,6 +35,14 @@ export default function SolutionScreen({ route }) {
       <Text style={styles.infoText}>
         Photo captured successfully!
       </Text>
+
+      {/* Floating button in bottom-right */}
+      <TouchableOpacity 
+        style={styles.floatingButton}
+        onPress={() => navigation.navigate('Camera')}
+      >
+        <Text style={styles.floatingButtonText}>📷</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -44,7 +51,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
-    padding: 105,
+    padding: 20,
+    marginTop:50,
   },
   title: {
     fontSize: 24,
@@ -82,6 +90,24 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: '#228B22',
     marginBottom: 20,
+    fontWeight: 'bold',
+  },
+  floatingButton: {
+    position: 'absolute',
+    bottom: 30,
+    right: 30,
+    backgroundColor: '#228B22',
+    borderRadius: 50,
+    padding: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  floatingButtonText: {
+    fontSize: 22,
+    color: 'white',
     fontWeight: 'bold',
   },
 });
